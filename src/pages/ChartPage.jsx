@@ -22,7 +22,6 @@ const ChartPage = ({ expenses, setExpenses }) => {
   let totalAmount = 0;
 
   if (expenses.length === 0) {
-    // Sample data with correct proportions
     categoryData = [
       { category: 'Food', amount: 50000, color: '#4dc9f6' },
       { category: 'Transport', amount: 30000, color: '#f67019' },
@@ -31,10 +30,19 @@ const ChartPage = ({ expenses, setExpenses }) => {
     ];
     totalAmount = categoryData.reduce((sum, e) => sum + e.amount, 0);
     
-    // Calculate percentages for sample data
+    categoryData.forEach(item => {
+      if (!categoryColors[item.category]) {
+        setCategoryColors(prev => ({
+          ...prev,
+          [item.category]: item.color
+        }));
+      }
+    });
+    
     categoryData = categoryData.map(item => ({
       ...item,
-      percentage: ((item.amount / totalAmount) * 100).toFixed(1)
+      percentage: ((item.amount / totalAmount) * 100).toFixed(1),
+      color: categoryColors[item.category] || item.color
     }));
   } else {
     const totals = {};
@@ -75,7 +83,7 @@ const ChartPage = ({ expenses, setExpenses }) => {
   const dataForChart = categoryData.map(({ category, amount, color }) => ({
     name: category,
     value: amount,
-    color: color,
+    color: categoryColors[category] || color,
   }));
 
   return (
@@ -117,7 +125,7 @@ const ChartPage = ({ expenses, setExpenses }) => {
               </tr>
             </thead>
             <tbody>
-              {currentCategories.map(({ category, percentage, amount, color }) => (
+              {currentCategories.map(({ category, percentage, amount }) => (
                 <tr key={category}>
                   <td>{category}</td>
                   <td>{percentage}%</td>
@@ -125,7 +133,10 @@ const ChartPage = ({ expenses, setExpenses }) => {
                   <td>
                     <input
                       type="color"
-                      value={color}
+                      value={categoryColors[category] || 
+                        defaultColors[
+                          categoryData.findIndex(item => item.category === category) % defaultColors.length
+                        ]}
                       onChange={(e) => handleColorChange(category, e.target.value)}
                     />
                   </td>
