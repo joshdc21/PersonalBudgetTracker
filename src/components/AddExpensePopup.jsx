@@ -4,7 +4,14 @@ import './AddExpensePopup.css';
 
 const defaultCategories = ['Food', 'Transport', 'Entertainment', 'Utilities', 'Shopping', 'Health', 'Other'];
 
-const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, onDeleteExpensesByCategory }) => {
+const AddExpensePopup = ({ 
+  onClose, 
+  onAddExpense, 
+  expenseToEdit, 
+  onDeleteExpensesByCategory,
+  selectedMonth, 
+  selectedYear    
+}) => {
   const [categories, setCategories] = useState([...defaultCategories]);
   const [category, setCategory] = useState(defaultCategories[0]);
   const [customCategory, setCustomCategory] = useState('');
@@ -12,6 +19,7 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, onDeleteExpense
   const [description, setDescription] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [categoryToRemove, setCategoryToRemove] = useState(null);
+  const [date, setDate] = useState('');
 
   useEffect(() => {
     const saved = localStorage.getItem('expenseCategories');
@@ -26,8 +34,46 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, onDeleteExpense
       setCategory(expenseToEdit.category);
       setAmount(expenseToEdit.amount.toString());
       setDescription(expenseToEdit.description);
+
+      const expenseDate = new Date(expenseToEdit.date);
+      setDate(formatDateForInput(expenseDate));
+    } else {
+      const defaultDate = new Date();
+      if (selectedYear && selectedMonth) {
+        defaultDate.setFullYear(selectedYear);
+        defaultDate.setMonth(selectedMonth - 1);
+        defaultDate.setDate(1); 
+      }
+      setDate(formatDateForInput(defaultDate));
     }
-  }, [expenseToEdit]);
+  }, [expenseToEdit, selectedMonth, selectedYear]);
+
+  const formatDateForInput = (dateObj) => {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleDateChange = (e) => {
+    setDate(e.target.value);
+  };
+
+  const getDateConstraints = () => {
+    if (selectedYear && selectedMonth) {
+      const year = selectedYear;
+      const month = selectedMonth;
+      
+      const firstDay = new Date(year, month - 1, 1);
+      const lastDay = new Date(year, month, 0);
+      
+      return {
+        min: formatDateForInput(firstDay),
+        max: formatDateForInput(lastDay)
+      };
+    }
+    return {};
+  };
 
   const handleCategoryChange = (e) => {
     const selected = e.target.value;
@@ -47,7 +93,7 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, onDeleteExpense
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!amount || !description) return;
+    if (!amount || !description || !date) return;
 
     const finalCategory = category === 'Other' && customCategory ? customCategory : category;
 
@@ -56,7 +102,7 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, onDeleteExpense
       category: finalCategory,
       amount: parseInt(amount.replace(/\D/g, '')),
       description,
-      date: expenseToEdit ? expenseToEdit.date : new Date(),
+      date: new Date(date),
     };
 
     if (category === 'Other' && customCategory && !categories.includes(customCategory)) {
@@ -90,6 +136,17 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, onDeleteExpense
         <span className="close-btn" onClick={onClose}>&times;</span>
         <h3>{expenseToEdit ? 'Edit Expense' : 'Add Expense'}</h3>
         <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <input
+              type="date"
+              value={date}
+              onChange={handleDateChange}
+              className="form-control"
+              {...getDateConstraints()}
+              required
+            />
+          </div>
+
           <div className="form-group">
             <select value={category} onChange={handleCategoryChange} className="form-control" required>
               {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -158,13 +215,13 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, onDeleteExpense
         </form>
 
         {categoryToRemove && (
-        <WarningDialog
-          message={`Are you sure you want to remove "${categoryToRemove}"?\nAll expenses in this category will be deleted.`}
-          onConfirm={handleRemoveCategory}
-          onCancel={() => setCategoryToRemove(null)}
-          confirmText="Delete"
-        />
-      )}
+          <WarningDialog
+            message={`Are you sure you want to remove "${categoryToRemove}"?\nAll expenses in this category will be deleted.`}
+            onConfirm={handleRemoveCategory}
+            onCancel={() => setCategoryToRemove(null)}
+            confirmText="Delete"
+          />
+        )}
       </div>
     </div>
   );
