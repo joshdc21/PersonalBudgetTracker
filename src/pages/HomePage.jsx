@@ -10,6 +10,7 @@ const Homepage = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [budgetAmount, setBudgetAmount] = useState(500000);  
 
   const itemsPerPage = 10;
   const totalPages = Math.ceil(expenses.length / itemsPerPage);
@@ -80,9 +81,18 @@ const Homepage = () => {
       <Header />
 
       <main className="homepage-content">
-        <h1 className="expenses-title">Expenses</h1>
-        <div className="total-expenses">Rp. {totalExpenses.toLocaleString()}</div>
+      <div className="expenses-header">
+        <div className="expenses-section">
+          <h1 className="expenses-title">Expenses</h1>
+          <div className="total-expenses">Rp. {totalExpenses.toLocaleString()}</div>
+        </div>
 
+        <div className="budget-section">
+          <h1 className="expenses-title">Budget</h1>
+          <div className="total-expenses">Rp. {budgetAmount.toLocaleString()}</div>
+        </div>
+      </div>
+        
         <div className="table-container">
           <table className="expenses-table">
             <thead>
