@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import AddExpensePopup from '../components/AddExpensePopup';
+import WarningDialog from '../components/WarningDialog';
 import './Homepage.css';
 
 const Homepage = () => {
   const [expenses, setExpenses] = useState([]); 
   const [currentPage, setCurrentPage] = useState(1);
   const [showPopup, setShowPopup] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
 
   const itemsPerPage = 10;
@@ -62,6 +64,17 @@ const Homepage = () => {
     setExpenses(prev => prev.filter(exp => exp.category !== categoryName));
   };
 
+  const confirmDeleteExpense = () => {
+    if (expenseToDelete) {
+      handleDeleteExpense(expenseToDelete.id);
+      setExpenseToDelete(null);
+    }
+  };
+  
+  const cancelDeleteExpense = () => {
+    setExpenseToDelete(null);
+  };
+
   return (
     <div className="homepage">
       <Header />
@@ -103,11 +116,11 @@ const Homepage = () => {
                         Edit
                       </button>
                       <button 
-                        className="delete-btn" 
-                        onClick={() => handleDeleteExpense(expense.id)}
-                      >
-                        Delete
-                      </button>
+                      className="delete-btn" 
+                      onClick={() => setExpenseToDelete(expense)}
+                    >
+                      Delete
+                    </button>
                     </td>
                   </tr>
                 ))
@@ -143,6 +156,16 @@ const Homepage = () => {
             onDeleteExpensesByCategory={handleDeleteExpensesByCategory}
           />
         )}
+
+      {expenseToDelete && (
+        <WarningDialog
+          message={`Are you sure you want to delete this expense in "${expenseToDelete.category}"?`}
+          subMessage={`Amount: Rp. ${expenseToDelete.amount.toLocaleString()}`}
+          onConfirm={confirmDeleteExpense}
+          onCancel={cancelDeleteExpense}
+          confirmText="Delete"
+        />
+      )}
       </main>
     </div>
   );

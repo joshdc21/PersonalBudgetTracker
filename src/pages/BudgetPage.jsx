@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import AddBudgetPopup from '../components/AddBudgetPopup';
+import WarningDialog from '../components/WarningDialog';
 import './BudgetPage.css';
 
 const BudgetPage = () => {
   const [budgets, setBudgets] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
+  const [budgetToDelete, setBudgetToDelete] = useState(null);
 
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -56,6 +58,17 @@ const BudgetPage = () => {
     setShowPopup(false);
   };
 
+  const confirmDeleteBudget = () => {
+    if (budgetToDelete) {
+      handleDeleteBudget(budgetToDelete.id);
+      setBudgetToDelete(null);
+    }
+  };
+  
+  const cancelDeleteBudget = () => {
+    setBudgetToDelete(null);
+  };
+
   return (
     <div className="budget-page">
       <Header />
@@ -91,11 +104,11 @@ const BudgetPage = () => {
                         Edit
                       </button>
                       <button 
-                        className="delete-btn" 
-                        onClick={() => handleDeleteBudget(budget.id)}
-                      >
-                        Delete
-                      </button>
+                      className="delete-btn" 
+                      onClick={() => setBudgetToDelete(budget)}
+                    >
+                      Delete
+                    </button>
                     </td>
                   </tr>
                 ))
@@ -131,6 +144,16 @@ const BudgetPage = () => {
             budgetToEdit={editingBudget}
           />
         </div>
+      )}
+
+      {budgetToDelete && (
+        <WarningDialog
+        message={`Are you sure you want to delete this budget for "${budgetToDelete.monthYear}"?`}
+        subMessage={`Amount: Rp. ${budgetToDelete.amount.toLocaleString()}`}
+        onConfirm={confirmDeleteBudget}
+        onCancel={cancelDeleteBudget}
+        confirmText="Delete"
+      />
       )}
     </div>
   );
