@@ -19,18 +19,25 @@ const ChartPage = ({ expenses, setExpenses }) => {
   }, [expenses]);
 
   let categoryData;
+  let totalAmount = 0;
+
   if (expenses.length === 0) {
+    // Sample data with correct proportions
     categoryData = [
-      { category: 'Food', amount: 50000, percentage: '50.0', color: '#4dc9f6' },
-      { category: 'Transport', amount: 30000, percentage: '30.0', color: '#f67019' },
-      { category: 'Entertainment', amount: 20000, percentage: '20.0', color: '#f53794' },
-      { category: 'Daily', amount: 20000, percentage: '20.0', color: '#537bc4' },
-      { category: 'Mobile Legend', amount: 20000, percentage: '20.0', color: '#f53794' }
+      { category: 'Food', amount: 50000, color: '#4dc9f6' },
+      { category: 'Transport', amount: 30000, color: '#f67019' },
+      { category: 'Entertainment', amount: 20000, color: '#f53794' },
+      { category: 'Daily', amount: 20000, color: '#537bc4' }
     ];
+    totalAmount = categoryData.reduce((sum, e) => sum + e.amount, 0);
+    
+    // Calculate percentages for sample data
+    categoryData = categoryData.map(item => ({
+      ...item,
+      percentage: ((item.amount / totalAmount) * 100).toFixed(1)
+    }));
   } else {
     const totals = {};
-    let totalAmount = 0;
-
     expenses.forEach(({ category, amount }) => {
       if (!totals[category]) totals[category] = 0;
       totals[category] += amount;
@@ -40,7 +47,7 @@ const ChartPage = ({ expenses, setExpenses }) => {
     categoryData = Object.entries(totals).map(([category, amount], index) => ({
       category,
       amount,
-      percentage: ((amount / totalAmount) * 100).toFixed(1),
+      percentage: totalAmount > 0 ? ((amount / totalAmount) * 100).toFixed(1) : '0.0',
       color: categoryColors[category] || defaultColors[index % defaultColors.length],
     }));
   }
@@ -65,12 +72,10 @@ const ChartPage = ({ expenses, setExpenses }) => {
     }));
   };
 
-  const totalAmount = categoryData.reduce((sum, e) => sum + e.amount, 0);
-
-  const dataForChart = categoryData.map(({ category, amount }, index) => ({
+  const dataForChart = categoryData.map(({ category, amount, color }) => ({
     name: category,
     value: amount,
-    color: categoryColors[category] || defaultColors[index % defaultColors.length],
+    color: color,
   }));
 
   return (
@@ -112,17 +117,17 @@ const ChartPage = ({ expenses, setExpenses }) => {
               </tr>
             </thead>
             <tbody>
-              {currentCategories.map(({ category, percentage, amount }, idx) => (
+              {currentCategories.map(({ category, percentage, amount, color }) => (
                 <tr key={category}>
                   <td>{category}</td>
                   <td>{percentage}%</td>
                   <td>-Rp. {amount.toLocaleString()}</td>
                   <td>
-                  <input
-                  type="color"
-                  value={categoryData.find(c => c.category === category)?.color || '#000000'}
-                  onChange={(e) => handleColorChange(category, e.target.value)}
-                  />
+                    <input
+                      type="color"
+                      value={color}
+                      onChange={(e) => handleColorChange(category, e.target.value)}
+                    />
                   </td>
                 </tr>
               ))}
