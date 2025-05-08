@@ -10,16 +10,30 @@ const Homepage = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
-  const [budgetAmount, setBudgetAmount] = useState(500000);  
+  const [budgetAmount, setBudgetAmount] = useState(500000);
+  const [monthFilter, setMonthFilter] = useState('');
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear());  
 
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(expenses.length / itemsPerPage);
 
+  const getFilteredExpenses = () => {
+    if (!monthFilter) return expenses;
+    
+    return expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      return (
+        expenseDate.getMonth() + 1 === parseInt(monthFilter) && 
+        expenseDate.getFullYear() === parseInt(yearFilter)
+      );
+    });
+  };
+
+  const filteredExpenses = getFilteredExpenses();
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentExpenses = expenses.slice(indexOfFirstItem, indexOfLastItem);
-
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const currentExpenses = filteredExpenses.slice(indexOfFirstItem, indexOfLastItem);
+  const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   const handleNext = () => {
     if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
@@ -42,11 +56,28 @@ const Homepage = () => {
       ]);
     }
     setShowPopup(false);
+    
+    if (monthFilter) {
+      const expenseDate = new Date(newExpense.date);
+      if (expenseDate.getMonth() + 1 === parseInt(monthFilter) && 
+          expenseDate.getFullYear() === parseInt(yearFilter)) {
+        setCurrentPage(1);
+      }
+    }
   };
 
   const handleEditExpense = (expense) => {
     setEditingExpense(expense);
     setShowPopup(true);
+    
+    if (monthFilter) {
+      const expenseDate = new Date(expense.date);
+      if (expenseDate.getMonth() + 1 !== parseInt(monthFilter) || 
+          expenseDate.getFullYear() !== parseInt(yearFilter)) {
+        setMonthFilter('');
+        setCurrentPage(1);
+      }
+    }
   };
 
   const handleDeleteExpense = (id) => {
@@ -81,19 +112,52 @@ const Homepage = () => {
       <Header />
 
       <main className="homepage-content">
-      <div className="expenses-header">
-        <div className="expenses-section">
-          <h1 className="expenses-title">Expenses</h1>
-          <div className="total-expenses">Rp. {totalExpenses.toLocaleString()}</div>
-        </div>
+        <div className="expenses-header">
+          <div className="expenses-section">
+            <h1 className="expenses-title">Expenses</h1>
+            <div className="total-expenses">Rp. {totalExpenses.toLocaleString()}</div>
+          </div>
 
-        <div className="budget-section">
-          <h1 className="expenses-title">Budget</h1>
-          <div className="total-expenses">Rp. {budgetAmount.toLocaleString()}</div>
+          <div className="budget-section">
+            <h1 className="expenses-title">Budget</h1>
+            <div className="total-expenses">Rp. {budgetAmount.toLocaleString()}</div>
+          </div>
         </div>
-      </div>
         
         <div className="table-container">
+          <div className="date-filter">
+            <select 
+              value={monthFilter}
+              onChange={(e) => {
+                setMonthFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="month-dropdown"
+              required
+            >
+              {Array.from({length: 12}, (_, i) => (
+                <option key={i+1} value={i+1}>
+                  {new Date(0, i).toLocaleString('default', {month: 'short'})}
+                </option>
+              ))}
+            </select>
+            
+            <select 
+              value={yearFilter}
+              onChange={(e) => {
+                setYearFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="year-dropdown"
+              required
+            >
+              {Array.from({length: 5}, (_, i) => {
+                const year = new Date().getFullYear() - 2 + i;
+                return <option key={year} value={year}>{year}</option>;
+              })}
+            </select>
+          </div>
+          
           <table className="expenses-table">
             <thead>
               <tr>
@@ -108,7 +172,9 @@ const Homepage = () => {
               {currentExpenses.length === 0 ? (
                 <tr>
                   <td colSpan="5" style={{ textAlign: 'center' }}>
-                    No expenses to show
+                    {monthFilter 
+                      ? `No expenses for ${new Date(0, monthFilter-1).toLocaleString('default', {month: 'long'})} ${yearFilter}`
+                      : 'No expenses to show'}
                   </td>
                 </tr>
               ) : (
@@ -126,11 +192,11 @@ const Homepage = () => {
                         Edit
                       </button>
                       <button 
-                      className="delete-btn" 
-                      onClick={() => setExpenseToDelete(expense)}
-                    >
-                      Delete
-                    </button>
+                        className="delete-btn" 
+                        onClick={() => setExpenseToDelete(expense)}
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -146,11 +212,14 @@ const Homepage = () => {
               key={i + 1}
               onClick={() => setCurrentPage(i + 1)}
               className={currentPage === i + 1 ? 'active' : ''}
+              disabled={filteredExpenses.length === 0}
             >
               {i + 1}
             </button>
           ))}
-          <button onClick={handleNext} disabled={currentPage === totalPages}>Next »</button>
+          <button onClick={handleNext} disabled={currentPage === totalPages || filteredExpenses.length === 0}>
+            Next »
+          </button>
         </div>
 
         <button className="add-button" onClick={() => setShowPopup(true)}>
@@ -162,20 +231,21 @@ const Homepage = () => {
             onClose={handleCancelEdit}
             onAddExpense={handleAddExpense}
             expenseToEdit={editingExpense}
-            expenses={expenses}
             onDeleteExpensesByCategory={handleDeleteExpensesByCategory}
+            selectedMonth={monthFilter}
+            selectedYear={yearFilter}
           />
         )}
 
-      {expenseToDelete && (
-        <WarningDialog
-          message={`Are you sure you want to delete this expense in "${expenseToDelete.category}"?`}
-          subMessage={`Amount: Rp. ${expenseToDelete.amount.toLocaleString()}`}
-          onConfirm={confirmDeleteExpense}
-          onCancel={cancelDeleteExpense}
-          confirmText="Delete"
-        />
-      )}
+        {expenseToDelete && (
+          <WarningDialog
+            message={`Are you sure you want to delete this expense in "${expenseToDelete.category}"?`}
+            subMessage={`Amount: Rp. ${expenseToDelete.amount.toLocaleString()}`}
+            onConfirm={confirmDeleteExpense}
+            onCancel={cancelDeleteExpense}
+            confirmText="Delete"
+          />
+        )}
       </main>
     </div>
   );
