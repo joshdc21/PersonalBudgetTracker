@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Header from '../components/Header';
 import AddExpensePopup from '../components/AddExpensePopup';
 import WarningDialog from '../components/WarningDialog';
+import BudgetWarning from '../components/BudgetWarning';
 import './Homepage.css';
 
 const Homepage = () => {
@@ -110,7 +111,7 @@ const Homepage = () => {
   return (
     <div className="homepage">
       <Header />
-
+      <BudgetWarning expensesTotal={totalExpenses} budgetAmount={budgetAmount} />
       <main className="homepage-content">
         <div className="expenses-header">
           <div className="expenses-section">
