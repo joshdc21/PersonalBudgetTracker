@@ -77,12 +77,11 @@ function LoginForm() {
                     {errors.password && <span className="error-text">{errors.password}</span>}
 
                     <div className="button-wrapper">
-                        <button type="submit" className="submit-button">Login</button>
-                        <button type="button" onClick={() => navigate('/forgot-password')} className="forgot-password-link">
-                            Forgot Password?
-                        </button>
+                      <button type="submit" className="submit-button">Login</button>
+                      <button type="button" onClick={() => navigate('/reset-password')} className="forgot-password-link">
+                        Forgot Password?
+                      </button>
                     </div>
-                    {errors.login && <span className="error-text">{errors.login}</span>}
 
                     <div className="additional-links">
                         <p className="login-prompt">
