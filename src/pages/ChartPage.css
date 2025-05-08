@@ -42,19 +42,20 @@
   }
   
   .category-table {
-    margin-top: 2rem;
+    margin-top: 1rem;
     width: 100%;
     max-width: 800px;
     text-align: center;
+    border: 1px solid #000;
+    border-radius: 10px;
+    overflow: hidden;
   }
   
   .category-table table {
     width: 100%;
-    border: 1px solid #000;
-    border-radius: 10px;
-    overflow: hidden;
-    border-collapse: separate;
+    border-collapse: collapse;
   }
+  
   
   .category-table thead,
   .category-table tbody tr {
@@ -65,7 +66,7 @@
   
   .category-table tbody {
     display: block;
-    max-height: 300px;
+    max-height: 144px; /* Height for 3 rows */
     overflow-y: auto;
   }
   
@@ -113,4 +114,25 @@
     border-radius: 50%;
   }
   
+  .pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1rem;
+    gap: 1rem;
+  }
   
+  .pagination-controls button {
+    padding: 0.5rem 1rem;
+    background-color: #537bc4;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  
+  .pagination-controls button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
