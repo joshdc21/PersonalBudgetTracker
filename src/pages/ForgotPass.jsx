@@ -27,7 +27,7 @@ function ForgotPass() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateEmail()) {
-      navigate('/');
+      navigate('/login');
     }
   };
 

@@ -37,7 +37,7 @@ function LoginForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      navigate('/homepage')
+      navigate('/')
     }
   };
 

@@ -45,7 +45,7 @@ function SignupForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      navigate('/');
+      navigate('/login');
     }
   };
 
