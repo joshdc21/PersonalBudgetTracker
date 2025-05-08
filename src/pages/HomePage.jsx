@@ -21,11 +21,10 @@ const Homepage = () => {
     useEffect(() => {
         const getExpenses = async () => {
             try {
-                console.log(monthFilter, yearFilter);
                 const response = await axios.post(`http://localhost:3003/api/expense/mny/${currentPage}`, {
                     userID: 1,
                     month: parseInt(monthFilter),
-                    year: yearFilter,
+                    year: parseInt(yearFilter),
                 });
                 setExpenses(response.data);
             } catch (error) {
@@ -38,7 +37,7 @@ const Homepage = () => {
                 const response = await axios.post('http://localhost:3003/api/expense/mny/sum', {
                     userID: 1,
                     month: parseInt(monthFilter),
-                    year: yearFilter,
+                    year: parseInt(yearFilter),
                 });
                 setTotalExpenses(response.data);
             } catch (error) {
@@ -51,7 +50,7 @@ const Homepage = () => {
                 const response = await axios.post(`http://localhost:3001/api/budget/mny`, {
                     userID: 1,
                     month: parseInt(monthFilter),
-                    year: yearFilter,
+                    year: parseInt(yearFilter),
                 });
                 if(response.data[0]) {
                     const budgetAmountFloat = parseFloat(response.data[0].amount)
@@ -67,7 +66,7 @@ const Homepage = () => {
                 const response = await axios.post(`http://localhost:3001/api/budget/check`, {
                     userID: 1,
                     month: parseInt(monthFilter),
-                    year: yearFilter,
+                    year: parseInt(yearFilter),
                 });
                 if(response.data) setBudgetRatio(response.data)
             } catch (error) {
