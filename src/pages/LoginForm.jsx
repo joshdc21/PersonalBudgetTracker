@@ -68,7 +68,7 @@ function LoginForm() {
 
           <div className="button-wrapper">
             <button type="submit" className="submit-button">Login</button>
-            <button type="button" onClick={() => navigate('/forgot-password')} className="forgot-password-link">
+            <button type="button" onClick={() => navigate('/reset-password')} className="forgot-password-link">
               Forgot Password?
             </button>
           </div>
