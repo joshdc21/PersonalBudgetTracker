@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Header.css';
+import WarningDialog from './WarningDialog'; 
 
 const Header = () => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showLogoutWarning, setShowLogoutWarning] = useState(false); 
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    // Perform any logout logic here (e.g., clearing localStorage/session)
+  const confirmLogout = () => {
+    setShowLogoutWarning(false);
     navigate('/login');
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutWarning(false);
   };
 
   return (
@@ -17,7 +23,7 @@ const Header = () => {
         <nav className="header-nav">
           <ul className="nav-links">
             <li><a href="/">Home</a></li>
-            <li><a href="/chart">Chart</a></li>
+            <li><a href="/chart">Summary</a></li>
             <li><a href="/budget">Budget</a></li>
           </ul>
         </nav>
@@ -30,11 +36,20 @@ const Header = () => {
           </span>
           {showDropdown && (
             <div className="dropdown-menu">
-              <button onClick={handleLogout}>Logout</button>
+              <button onClick={() => setShowLogoutWarning(true)}>Logout</button>
             </div>
           )}
         </div>
       </div>
+
+      {showLogoutWarning && (
+        <WarningDialog
+        message="Are you sure you want to log out?"
+        onConfirm={confirmLogout}
+        onCancel={cancelLogout}
+        confirmText="Logout"
+      />
+      )}
     </header>
   );
 };

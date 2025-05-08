@@ -10,7 +10,6 @@ const AddBudgetPopup = ({ onClose, onAddBudget }) => {
 
     if (!monthYear || !amount) return;
 
-    // Validate month/year format (MM/YYYY)
     const [month, year] = monthYear.split('/');
     if (!month || !year || month.length !== 2 || year.length !== 4) {
       alert('Please enter a valid MM/YYYY format');
@@ -53,11 +52,9 @@ const AddBudgetPopup = ({ onClose, onAddBudget }) => {
   const handleMonthYearChange = (e) => {
     const value = e.target.value.replace(/[^0-9/]/g, '');
 
-    // Auto-insert slash
     if (value.length === 2 && !value.includes('/')) {
       setMonthYear(value + '/');
     } 
-    // Prevent adding more than 7 characters (MM/YYYY)
     else if (value.length <= 7) {
       setMonthYear(value);
     }
@@ -69,26 +66,32 @@ const AddBudgetPopup = ({ onClose, onAddBudget }) => {
         <span className="close-btn" onClick={onClose}>&times;</span>
         <h3>Add Budget</h3>
         <form onSubmit={handleSubmit}>
+        <div className="form-group">
           <input
             type="text"
+            className="form-control"
             value={monthYear}
             onChange={handleMonthYearChange}
             placeholder="MM/YYYY"
             maxLength={7}
             required
           />
+        </div>
 
+        <div className="form-group">
           <input
             type="text"
+            className="form-control"
             value={formatAmount(amount)}
             onChange={handleAmountChange}
             placeholder="Rp. xxx.xxx"
             inputMode="numeric"
             required
           />
+        </div>
 
-          <button type="submit">Add</button>
-        </form>
+        <button type="submit" className="submit-btn">Add</button>
+      </form>
       </div>
     </div>
   );
