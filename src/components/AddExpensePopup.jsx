@@ -16,7 +16,7 @@ const AddExpensePopup = ({ onClose, onAddExpense }) => {
     const newExpense = {
       id: Date.now(),
       category,
-      amount: parseInt(amount), // Ensure amount is a number
+      amount: parseInt(amount), 
       description,
       date: new Date(),
     };
@@ -26,13 +26,11 @@ const AddExpensePopup = ({ onClose, onAddExpense }) => {
   };
 
   const handleAmountChange = (e) => {
-    // Remove non-numeric characters except for the decimal point
     const value = e.target.value.replace(/[^\d]/g, '');
     setAmount(value);
   };
 
   const formatAmount = (value) => {
-    // Format the amount as currency (for display purposes)
     if (!value) return '';
     return `Rp. ${value.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
   };
@@ -55,8 +53,8 @@ const AddExpensePopup = ({ onClose, onAddExpense }) => {
 
           <input
             type="text"
-            value={formatAmount(amount)} // Show formatted amount
-            onChange={handleAmountChange} // Handle amount input as numeric
+            value={formatAmount(amount)}
+            onChange={handleAmountChange}
             placeholder="Rp. xxx.xxx"
             inputMode="numeric"
             required

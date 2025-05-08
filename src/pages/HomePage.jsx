@@ -7,6 +7,7 @@ const Homepage = () => {
   const [expenses, setExpenses] = useState([]); 
   const [currentPage, setCurrentPage] = useState(1);
   const [showPopup, setShowPopup] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
 
   const itemsPerPage = 10;
   const totalPages = Math.ceil(expenses.length / itemsPerPage);
@@ -26,12 +27,35 @@ const Homepage = () => {
   };
 
   const handleAddExpense = (newExpense) => {
-    setExpenses((prev) => [
-      { ...newExpense, id: prev.length + 1 },
-      ...prev,
-    ]);
+    if (editingExpense) {
+      setExpenses(prev => prev.map(exp => 
+        exp.id === editingExpense.id ? { ...newExpense, id: editingExpense.id } : exp
+      ));
+      setEditingExpense(null);
+    } else {
+      setExpenses((prev) => [
+        { ...newExpense, id: Date.now() },
+        ...prev,
+      ]);
+    }
     setShowPopup(false);
-    setCurrentPage(1);
+  };
+
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setShowPopup(true);
+  };
+
+  const handleDeleteExpense = (id) => {
+    setExpenses(prev => prev.filter(expense => expense.id !== id));
+    if (currentExpenses.length === 1 && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingExpense(null);
+    setShowPopup(false);
   };
 
   return (
@@ -50,12 +74,13 @@ const Homepage = () => {
                 <th>Date</th>
                 <th>Amount</th>
                 <th>Description</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {currentExpenses.length === 0 ? (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center' }}>
+                  <td colSpan="5" style={{ textAlign: 'center' }}>
                     No expenses to show
                   </td>
                 </tr>
@@ -66,6 +91,20 @@ const Homepage = () => {
                     <td>{new Date(expense.date).toLocaleDateString('en-US')}</td>
                     <td className="expense-amount">-Rp. {expense.amount.toLocaleString()}</td>
                     <td>{expense.description}</td>
+                    <td className="expense-actions">
+                      <button 
+                        className="edit-btn" 
+                        onClick={() => handleEditExpense(expense)}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        className="delete-btn" 
+                        onClick={() => handleDeleteExpense(expense.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -93,8 +132,9 @@ const Homepage = () => {
 
         {showPopup && (
           <AddExpensePopup
-            onClose={() => setShowPopup(false)}
+            onClose={handleCancelEdit}
             onAddExpense={handleAddExpense}
+            expenseToEdit={editingExpense}
           />
         )}
       </main>

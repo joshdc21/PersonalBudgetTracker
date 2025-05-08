@@ -6,6 +6,7 @@ import './BudgetPage.css';
 const BudgetPage = () => {
   const [budgets, setBudgets] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
+  const [editingBudget, setEditingBudget] = useState(null);
 
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,7 +25,34 @@ const BudgetPage = () => {
   };
 
   const handleAddBudget = (newBudget) => {
-    setBudgets((prev) => [...prev, newBudget]);
+    if (editingBudget) {
+      setBudgets(prev => prev.map(budget => 
+        budget.id === editingBudget.id ? { ...newBudget, id: editingBudget.id } : budget
+      ));
+      setEditingBudget(null);
+    } else {
+      setBudgets((prev) => [
+        { ...newBudget, id: Date.now() },
+        ...prev,
+      ]);
+    }
+    setShowPopup(false);
+  };
+
+  const handleEditBudget = (budget) => {
+    setEditingBudget(budget);
+    setShowPopup(true);
+  };
+
+  const handleDeleteBudget = (id) => {
+    setBudgets(prev => prev.filter(budget => budget.id !== id));
+    if (currentBudgets.length === 1 && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingBudget(null);
     setShowPopup(false);
   };
 
@@ -40,20 +68,35 @@ const BudgetPage = () => {
               <tr>
                 <th>Month/Year</th>
                 <th>Budget Amount</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {currentBudgets.length === 0 ? (
                 <tr>
-                  <td colSpan="2" style={{ textAlign: 'center' }}>
+                  <td colSpan="3" style={{ textAlign: 'center' }}>
                     No budgets to show
                   </td>
                 </tr>
               ) : (
                 currentBudgets.map((budget) => (
                   <tr key={budget.id}>
-                    <td>{budget.monthYear}</td> {/* Changed from budget.date to budget.monthYear */}
+                    <td>{budget.monthYear}</td>
                     <td>Rp. {budget.amount.toLocaleString('id-ID')}</td>
+                    <td className="budget-actions">
+                      <button 
+                        className="edit-btn" 
+                        onClick={() => handleEditBudget(budget)}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        className="delete-btn" 
+                        onClick={() => handleDeleteBudget(budget.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -83,8 +126,9 @@ const BudgetPage = () => {
       {showPopup && (
         <div className="popup">
           <AddBudgetPopup
-            onClose={() => setShowPopup(false)}
+            onClose={handleCancelEdit}
             onAddBudget={handleAddBudget}
+            budgetToEdit={editingBudget}
           />
         </div>
       )}
