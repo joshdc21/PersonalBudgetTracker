@@ -1,24 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import WarningDialog from './WarningDialog'; 
 import './AddExpensePopup.css';
 
 const defaultCategories = ['Food', 'Transport', 'Entertainment', 'Utilities', 'Shopping', 'Health', 'Other'];
 
-const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, expenses, onDeleteExpensesByCategory }) => {
+const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, onDeleteExpensesByCategory }) => {
   const [categories, setCategories] = useState([...defaultCategories]);
   const [category, setCategory] = useState(defaultCategories[0]);
   const [customCategory, setCustomCategory] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [categoryToRemove, setCategoryToRemove] = useState(null);
 
   useEffect(() => {
-    const savedCategories = localStorage.getItem('expenseCategories');
-    if (savedCategories) {
-      const parsedCategories = JSON.parse(savedCategories);
-      const mergedCategories = [...new Set([...defaultCategories, ...parsedCategories])];
-      setCategories(mergedCategories);
+    const saved = localStorage.getItem('expenseCategories');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setCategories([...new Set([...defaultCategories, ...parsed])]);
     }
   }, []);
 
@@ -31,13 +30,20 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, expenses, onDel
   }, [expenseToEdit]);
 
   const handleCategoryChange = (e) => {
-    const selectedCategory = e.target.value;
-    setCategory(selectedCategory);
-    setShowCustomInput(selectedCategory === 'Other');
-    if (selectedCategory !== 'Other') {
-      setCustomCategory('');
-    }
+    const selected = e.target.value;
+    setCategory(selected);
+    setShowCustomInput(selected === 'Other');
+    if (selected !== 'Other') setCustomCategory('');
   };
+
+  const handleAmountChange = (e) => {
+    const value = e.target.value.replace(/[^0-9,]/g, '');
+    if ((value.match(/,/g) || []).length > 1) return;
+    setAmount(value);
+  };
+
+  const formatAmount = (value) =>
+    value ? `Rp. ${value.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}` : '';
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -48,59 +54,34 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, expenses, onDel
     const newExpense = {
       id: expenseToEdit ? expenseToEdit.id : Date.now(),
       category: finalCategory,
-      amount: parseInt(amount),
+      amount: parseInt(amount.replace(/\D/g, '')),
       description,
       date: expenseToEdit ? expenseToEdit.date : new Date(),
     };
 
     if (category === 'Other' && customCategory && !categories.includes(customCategory)) {
-      const updatedCategories = [...categories];
-      updatedCategories.splice(updatedCategories.length - 1, 0, customCategory);
-      setCategories(updatedCategories);
-      const customCategories = updatedCategories.filter(cat => !defaultCategories.includes(cat));
-      localStorage.setItem('expenseCategories', JSON.stringify(customCategories));
+      const updated = [...categories];
+      updated.splice(updated.length - 1, 0, customCategory);
+      setCategories(updated);
+      const custom = updated.filter(c => !defaultCategories.includes(c));
+      localStorage.setItem('expenseCategories', JSON.stringify(custom));
     }
 
     onAddExpense(newExpense);
     onClose();
   };
 
-  const promptRemoveCategory = (catToRemove) => {
-    if (defaultCategories.includes(catToRemove)) return;
-    setCategoryToRemove(catToRemove);
-    setShowConfirmDialog(true);
+  const promptRemoveCategory = (cat) => {
+    if (!defaultCategories.includes(cat)) setCategoryToRemove(cat);
   };
 
   const handleRemoveCategory = () => {
-    const updatedCategories = categories.filter(cat => cat !== categoryToRemove);
-    setCategories(updatedCategories);
-
-    const customCategories = updatedCategories.filter(cat => !defaultCategories.includes(cat));
-    localStorage.setItem('expenseCategories', JSON.stringify(customCategories));
-
+    const updated = categories.filter(c => c !== categoryToRemove);
+    setCategories(updated);
+    localStorage.setItem('expenseCategories', JSON.stringify(updated.filter(c => !defaultCategories.includes(c))));
     onDeleteExpensesByCategory(categoryToRemove);
-
-    if (category === categoryToRemove) {
-      setCategory(defaultCategories[0]);
-    }
-
-    setShowConfirmDialog(false);
+    if (category === categoryToRemove) setCategory(defaultCategories[0]);
     setCategoryToRemove(null);
-  };
-
-  const handleCancelRemove = () => {
-    setShowConfirmDialog(false);
-    setCategoryToRemove(null);
-  };
-
-  const handleAmountChange = (e) => {
-    const value = e.target.value.replace(/[^\d]/g, '');
-    setAmount(value);
-  };
-
-  const formatAmount = (value) => {
-    if (!value) return '';
-    return `Rp. ${value.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
   };
 
   return (
@@ -110,15 +91,8 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, expenses, onDel
         <h3>{expenseToEdit ? 'Edit Expense' : 'Add Expense'}</h3>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <select 
-              value={category} 
-              onChange={handleCategoryChange} 
-              required
-              className="form-control"
-            >
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
+            <select value={category} onChange={handleCategoryChange} className="form-control" required>
+              {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>
           </div>
 
@@ -141,8 +115,8 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, expenses, onDel
               onChange={handleAmountChange}
               placeholder="Rp. xxx.xxx"
               inputMode="numeric"
-              required
               className="form-control"
+              required
             />
           </div>
 
@@ -155,23 +129,25 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, expenses, onDel
             />
           </div>
 
-          {categories.filter(cat => !defaultCategories.includes(cat)).length > 0 && (
+          {categories.some(c => !defaultCategories.includes(c)) && (
             <div className="custom-categories-section">
               <label>Custom Categories</label>
               <div className="category-tags">
-                {categories.filter(cat => !defaultCategories.includes(cat)).map(cat => (
-                  <span key={cat} className="category-tag">
-                    {cat}
-                    <button 
-                      type="button" 
-                      onClick={() => promptRemoveCategory(cat)}
-                      className="remove-category-btn"
-                      title="Remove category"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
+                {categories
+                  .filter(c => !defaultCategories.includes(c))
+                  .map(c => (
+                    <span key={c} className="category-tag">
+                      {c}
+                      <button
+                        type="button"
+                        className="remove-category-btn"
+                        onClick={() => promptRemoveCategory(c)}
+                        title="Remove category"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
               </div>
             </div>
           )}
@@ -181,18 +157,14 @@ const AddExpensePopup = ({ onClose, onAddExpense, expenseToEdit, expenses, onDel
           </button>
         </form>
 
-        {showConfirmDialog && (
-          <div className="confirmation-dialog">
-            <div className="dialog-content">
-              <p>Are you sure you want to remove "{categoryToRemove}"?</p>
-              <p>All expenses in this category will be deleted.</p>
-              <div className="dialog-buttons">
-                <button onClick={handleCancelRemove} className="cancel-btn">Cancel</button>
-                <button onClick={handleRemoveCategory} className="confirm-btn">Delete</button>
-              </div>
-            </div>
-          </div>
-        )}
+        {categoryToRemove && (
+        <WarningDialog
+          message={`Are you sure you want to remove "${categoryToRemove}"?\nAll expenses in this category will be deleted.`}
+          onConfirm={handleRemoveCategory}
+          onCancel={() => setCategoryToRemove(null)}
+          confirmText="Delete"
+        />
+      )}
       </div>
     </div>
   );
