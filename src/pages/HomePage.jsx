@@ -48,7 +48,7 @@ const Homepage = () => {
               <tr>
                 <th>Category</th>
                 <th>Date</th>
-                <th>Expenses</th>
+                <th>Amount</th>
                 <th>Description</th>
               </tr>
             </thead>
