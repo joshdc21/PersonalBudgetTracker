@@ -58,6 +58,10 @@ const Homepage = () => {
     setShowPopup(false);
   };
 
+  const handleDeleteExpensesByCategory = (categoryName) => {
+    setExpenses(prev => prev.filter(exp => exp.category !== categoryName));
+  };
+
   return (
     <div className="homepage">
       <Header />
@@ -135,6 +139,8 @@ const Homepage = () => {
             onClose={handleCancelEdit}
             onAddExpense={handleAddExpense}
             expenseToEdit={editingExpense}
+            expenses={expenses}
+            onDeleteExpensesByCategory={handleDeleteExpensesByCategory}
           />
         )}
       </main>
