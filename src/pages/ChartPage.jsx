@@ -2,48 +2,57 @@ import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import './ChartPage.css';
+import axios from 'axios'; // Add this if using axios
 
-const ChartPage = ({ expenses, setExpenses }) => {
+const ChartPage = () => {
   const defaultColors = ['#4dc9f6', '#f67019', '#f53794', '#537bc4', '#acc236'];
+  const [expenses, setExpenses] = useState([]);
   const [categoryColors, setCategoryColors] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // === Fetch expenses from API ===
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        const res = await axios.post(`http://localhost:3003/api/expense/mny/gbC`, {
+            userID: 1,
+            month: 5,
+            year: 2025
+        }); // Adjust endpoint as needed
+        console.log(res.data)
+        const data = []
+        for(let key in res.data) {
+            const sd = {}
+            sd.category = key
+            sd.amount = res.data[key]
+            data.push(sd)
+        }
+        setExpenses(data);
+      } catch (err) {
+        console.error('Failed to fetch expenses:', err);
+      }
+    };
+
+    fetchExpenses();
+  }, []);
+
+  // === Set color map for categories ===
   useEffect(() => {
     const initialColors = {};
     const uniqueCategories = [...new Set(expenses.map((e) => e.category))];
     uniqueCategories.forEach((cat, index) => {
       initialColors[cat] = categoryColors[cat] || defaultColors[index % defaultColors.length];
     });
-    setCategoryColors(initialColors);
+    setCategoryColors((prev) => ({ ...initialColors }));
   }, [expenses]);
 
+  // === Calculate chart and table data ===
   let categoryData;
   let totalAmount = 0;
 
   if (expenses.length === 0) {
-    categoryData = [
-      { category: 'Food', amount: 50000, color: '#4dc9f6' },
-      { category: 'Transport', amount: 30000, color: '#f67019' },
-      { category: 'Entertainment', amount: 20000, color: '#f53794' },
-      { category: 'Daily', amount: 20000, color: '#537bc4' }
-    ];
-    totalAmount = categoryData.reduce((sum, e) => sum + e.amount, 0);
-    
-    categoryData.forEach(item => {
-      if (!categoryColors[item.category]) {
-        setCategoryColors(prev => ({
-          ...prev,
-          [item.category]: item.color
-        }));
-      }
-    });
-    
-    categoryData = categoryData.map(item => ({
-      ...item,
-      percentage: ((item.amount / totalAmount) * 100).toFixed(1),
-      color: categoryColors[item.category] || item.color
-    }));
+    categoryData = [];
   } else {
     const totals = {};
     expenses.forEach(({ category, amount }) => {
@@ -60,11 +69,13 @@ const ChartPage = ({ expenses, setExpenses }) => {
     }));
   }
 
+  // === Pagination logic ===
   const totalPages = Math.ceil(categoryData.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentCategories = categoryData.slice(indexOfFirstItem, indexOfLastItem);
 
+  // === Event handlers ===
   const handleNext = () => {
     if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
   };
@@ -133,10 +144,7 @@ const ChartPage = ({ expenses, setExpenses }) => {
                   <td>
                     <input
                       type="color"
-                      value={categoryColors[category] || 
-                        defaultColors[
-                          categoryData.findIndex(item => item.category === category) % defaultColors.length
-                        ]}
+                      value={categoryColors[category] || defaultColors[categoryData.findIndex(item => item.category === category) % defaultColors.length]}
                       onChange={(e) => handleColorChange(category, e.target.value)}
                     />
                   </td>
