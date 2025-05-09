@@ -22,9 +22,18 @@ const Header = () => {
       <div className="header-container">
         <nav className="header-nav">
           <ul className="nav-links">
-            <li><a href="/">Home</a></li>
-            <li><a href="/chart">Summary</a></li>
-            <li><a href="/budget">Budget</a></li>
+            <li><a href="#" onClick={(e) => {
+                e.preventDefault()
+                navigate("/")
+            }}>Home</a></li>
+            <li><a href="#" onClick={(e) => {
+                e.preventDefault()
+                navigate("/chart")
+            }}>Summary</a></li>
+            <li><a href="#" onClick={(e) => {
+                e.preventDefault()
+                navigate("/budget")
+            }}>Budget</a></li>
           </ul>
         </nav>
         <div className="user-icon-container">

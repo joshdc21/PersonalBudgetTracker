@@ -4,9 +4,12 @@ import Header from '../components/Header';
 import AddExpensePopup from '../components/AddExpensePopup';
 import WarningDialog from '../components/WarningDialog';
 import BudgetWarning from '../components/BudgetWarning';
+import { useUser  } from '../UserContext';
 import './Homepage.css';
 
 const Homepage = () => {
+    const { userID } = useUser()
+
     const [expenses, setExpenses] = useState([]);
     const [totalExpenses, setTotalExpenses] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
@@ -19,10 +22,11 @@ const Homepage = () => {
     const [yearFilter, setYearFilter] = useState(new Date().getFullYear());
 
     useEffect(() => {
+        console.log(userID)
         const getExpenses = async () => {
             try {
                 const response = await axios.post(`http://localhost:3003/api/expense/mny/${currentPage}`, {
-                    userID: 1,
+                    userID: userID,
                     month: parseInt(monthFilter),
                     year: parseInt(yearFilter),
                 });
@@ -35,7 +39,7 @@ const Homepage = () => {
         const getTotalExpenses = async () => {
             try {
                 const response = await axios.post('http://localhost:3003/api/expense/mny/sum', {
-                    userID: 1,
+                    userID: userID,
                     month: parseInt(monthFilter),
                     year: parseInt(yearFilter),
                 });
@@ -48,7 +52,7 @@ const Homepage = () => {
         const getBudget = async () => {
             try {
                 const response = await axios.post(`http://localhost:3001/api/budget/mny`, {
-                    userID: 1,
+                    userID: userID,
                     month: parseInt(monthFilter),
                     year: parseInt(yearFilter),
                 });
@@ -64,7 +68,7 @@ const Homepage = () => {
         const getExpenseBudgetRatio = async () => {
             try {
                 const response = await axios.post(`http://localhost:3001/api/budget/check`, {
-                    userID: 1,
+                    userID: userID,
                     month: parseInt(monthFilter),
                     year: parseInt(yearFilter),
                 });

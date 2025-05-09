@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../UserContext';
 import axios from "axios"
 import './LoginForm.css';
 
 function LoginForm() {
+    const { setUserID } = useUser();
+
     const [formData, setFormData] = useState({
         username: '',
         password: ''
@@ -42,7 +45,10 @@ function LoginForm() {
                     password: formData.password
                 })
                 
-                if(res.status === 200) navigate("/");
+                if(res.status === 200) {
+                    setUserID(res.data.userID)
+                    navigate("/");
+                }
             } catch (err) {
                 setErrors({
                     login: "Invalid username or password"
