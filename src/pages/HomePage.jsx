@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import AddExpensePopup from '../components/AddExpensePopup';
 import WarningDialog from '../components/WarningDialog';
 import BudgetWarning from '../components/BudgetWarning';
-import { useUser  } from '../UserContext';
+import { useUser } from '../UserContext';
 import './Homepage.css';
 
 const Homepage = () => {
@@ -22,67 +22,8 @@ const Homepage = () => {
     const [yearFilter, setYearFilter] = useState(new Date().getFullYear());
 
     useEffect(() => {
-        console.log(userID)
-        const getExpenses = async () => {
-            try {
-                const response = await axios.post(`http://localhost:3003/api/expense/mny/${currentPage}`, {
-                    userID: userID,
-                    month: parseInt(monthFilter),
-                    year: parseInt(yearFilter),
-                });
-                setExpenses(response.data);
-            } catch (error) {
-                console.error('Error fetching expenses:', error);
-            }
-        }
-
-        const getTotalExpenses = async () => {
-            try {
-                const response = await axios.post('http://localhost:3003/api/expense/mny/sum', {
-                    userID: userID,
-                    month: parseInt(monthFilter),
-                    year: parseInt(yearFilter),
-                });
-                setTotalExpenses(response.data);
-            } catch (error) {
-                console.error('Error fetching total expenses:', error);
-            }
-        }
-
-        const getBudget = async () => {
-            try {
-                const response = await axios.post(`http://localhost:3001/api/budget/mny`, {
-                    userID: userID,
-                    month: parseInt(monthFilter),
-                    year: parseInt(yearFilter),
-                });
-                if(response.data[0]) {
-                    const budgetAmountFloat = parseFloat(response.data[0].amount)
-                    setBudgetAmount(budgetAmountFloat);
-                } else setBudgetAmount(0)
-            } catch (error) {
-                console.error('Error fetching budget:', error);
-            }
-        }
-
-        const getExpenseBudgetRatio = async () => {
-            try {
-                const response = await axios.post(`http://localhost:3001/api/budget/check`, {
-                    userID: userID,
-                    month: parseInt(monthFilter),
-                    year: parseInt(yearFilter),
-                });
-                if(response.data) setBudgetRatio(response.data)
-            } catch (error) {
-                console.error('Error fetching budget:', error);
-            }
-        }
-
-        getExpenseBudgetRatio()
-        getTotalExpenses();
-        getBudget();
-        getExpenses();
-    }, [monthFilter, yearFilter, currentPage]);
+        refreshData();
+    }, [monthFilter, yearFilter, currentPage, userID]);
 
     const itemsPerPage = 10;
 
@@ -112,26 +53,28 @@ const Homepage = () => {
         if (currentPage > 1) setCurrentPage((prev) => prev - 1);
     };
 
-    const handleAddExpense = (newExpense) => {
-        if (editingExpense) {
-            setExpenses(prev => prev.map(exp =>
-                exp.id === editingExpense.id ? { ...newExpense, id: editingExpense.id } : exp
-            ));
-            setEditingExpense(null);
-        } else {
-            setExpenses((prev) => [
-                { ...newExpense, id: Date.now() },
-                ...prev,
-            ]);
-        }
-        setShowPopup(false);
+    const handleAddExpense = async (newExpense) => {
+        try {
+            console.log(newExpense)
+            if (editingExpense) {
+                const updatedExpense = {
+                    description: newExpense.description.replace(/[\r\n]+/g, ''),
+                    ...newExpense,
+                };
 
-        if (monthFilter) {
-            const expenseDate = new Date(newExpense.date);
-            if (expenseDate.getMonth() + 1 === parseInt(monthFilter) &&
-                expenseDate.getFullYear() === parseInt(yearFilter)) {
-                setCurrentPage(1);
+                // Update existing expense
+                await axios.put(`http://localhost:3003/api/expense/${editingExpense.expenseID}`, updatedExpense);
+            } else {
+                // Create new expense
+                await axios.post('http://localhost:3003/api/expense', newExpense);
             }
+
+            // Refresh data after operation
+            refreshData();
+            setShowPopup(false);
+            setEditingExpense(null);
+        } catch (error) {
+            console.error('Error saving expense:', error);
         }
     };
 
@@ -149,10 +92,17 @@ const Homepage = () => {
         }
     };
 
-    const handleDeleteExpense = (id) => {
-        setExpenses(prev => prev.filter(expense => expense.id !== id));
-        if (currentExpenses.length === 1 && currentPage > 1) {
-            setCurrentPage(currentPage - 1);
+    const handleDeleteExpense = async (id) => {
+        try {
+            // console.log(id)
+              await axios.delete(`http://localhost:3003/api/expense/${id}`);
+            refreshData();
+
+            if (expenses.length === 1 && currentPage > 1) {
+                setCurrentPage(currentPage - 1);
+            }
+        } catch (error) {
+            console.error('Error deleting expense:', error);
         }
     };
 
@@ -167,13 +117,47 @@ const Homepage = () => {
 
     const confirmDeleteExpense = () => {
         if (expenseToDelete) {
-            handleDeleteExpense(expenseToDelete.id);
+            handleDeleteExpense(expenseToDelete.expenseID);
             setExpenseToDelete(null);
         }
     };
 
     const cancelDeleteExpense = () => {
         setExpenseToDelete(null);
+    };
+
+    const refreshData = async () => {
+        try {
+            const [expensesRes, totalRes, budgetRes, ratioRes] = await Promise.all([
+                axios.post(`http://localhost:3003/api/expense/mny/${currentPage}`, {
+                    userID: userID,
+                    month: parseInt(monthFilter),
+                    year: parseInt(yearFilter),
+                }),
+                axios.post('http://localhost:3003/api/expense/mny/sum', {
+                    userID: userID,
+                    month: parseInt(monthFilter),
+                    year: parseInt(yearFilter),
+                }),
+                axios.post(`http://localhost:3001/api/budget/mny`, {
+                    userID: userID,
+                    month: parseInt(monthFilter),
+                    year: parseInt(yearFilter),
+                }),
+                axios.post(`http://localhost:3001/api/budget/check`, {
+                    userID: userID,
+                    month: parseInt(monthFilter),
+                    year: parseInt(yearFilter),
+                })
+            ]);
+
+            setExpenses(expensesRes.data);
+            setTotalExpenses(totalRes.data);
+            setBudgetAmount(budgetRes.data[0] ? parseFloat(budgetRes.data[0].amount) : 0);
+            setBudgetRatio(ratioRes.data || 0.1);
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+        }
     };
 
     return (
@@ -241,9 +225,7 @@ const Homepage = () => {
                             {currentExpenses.length === 0 ? (
                                 <tr>
                                     <td colSpan="5" style={{ textAlign: 'center' }}>
-                                        {monthFilter
-                                            ? `No expenses for ${new Date(0, monthFilter - 1).toLocaleString('default', { month: 'long' })} ${yearFilter}`
-                                            : 'No expenses to show'}
+                                        No expenses found for selected period
                                     </td>
                                 </tr>
                             ) : (
