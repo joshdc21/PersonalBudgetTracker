@@ -1,0 +1,288 @@
+.budget-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f2f2f2;
+  }
+  
+  .budget-content {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+    text-align: center;
+    position: relative;
+  }
+  
+  .budget-title {
+    font-size: 2rem;
+    margin-bottom: 1.5rem; 
+    color: #000;
+  }
+  
+  .table-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .budget-table {
+    width: 100%;
+    margin-bottom: 1rem;
+    border: 1px solid #000;
+    border-radius: 10px;
+    overflow: hidden;
+    border-collapse: separate;
+  }
+  
+  .budget-table thead,
+  .budget-table tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+  
+  .budget-table tbody {
+    display: block;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  
+  .budget-table th {
+    padding: 0.75rem;
+    text-align: left;
+    color: #000;
+    border-bottom: 1px solid #000;
+  }
+  
+  .budget-table td {
+    padding: 0.75rem;
+    text-align: left;
+    color: #000;
+  }
+  
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  
+  .pagination button {
+    padding: 6px 12px;
+    border: 1px solid #000;
+    background-color: transparent;
+    color: #000;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  
+  .pagination button.active {
+    background-color: #000;
+    color: #fff;
+  }
+  
+  .pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .add-budget-button {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background-color: #000;
+    color: #fff;
+    border: none;
+    font-size: 2rem;
+    width: 30px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+  }
+  
+  .add-budget-button:hover {
+    transform: scale(1.05);
+    background-color: #333;
+  }
+  
+  .popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .popup-content {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    color: #000;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+  
+  .close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #000;
+    background: none;
+    border: none;
+  }
+
+  /* Filters styling */
+  .filter-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-select {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border: 1px solid #000;
+    border-radius: 6px;
+    background-color: #fff;
+    color: #000;
+    cursor: pointer;
+    min-width: 120px;
+    font-family: inherit;
+  }
+
+  .filter-select option {
+    background-color: #fff;
+    color: #000;
+  }
+
+  /* Dashboard card styling */
+  .budget-dashboard {
+    background-color: #fff;
+    border: 1px solid #000;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    text-align: left;
+    width: 100%;
+  }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .dashboard-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dashboard-item label {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+  }
+
+  .dashboard-item span {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #000;
+  }
+
+  .dashboard-item.remaining-positive span {
+    color: #2ecc71;
+  }
+
+  .dashboard-item.remaining-negative span {
+    color: #e74c3c;
+  }
+
+  /* Progress bar */
+  .progress-container {
+    margin-bottom: 1.5rem;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .progress-bar-bg {
+    background-color: #e0e0e0;
+    height: 12px;
+    border-radius: 6px;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease, background-color 0.3s ease;
+  }
+
+  .progress-bar-fill.normal {
+    background-color: #3498db;
+  }
+
+  .progress-bar-fill.warning {
+    background-color: #f1c40f;
+  }
+
+  .progress-bar-fill.danger {
+    background-color: #e74c3c;
+  }
+
+  /* Overspent alert */
+  .overspent-alert {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .alert {
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-size: 0.9rem;
+    width: 100%;
+  }
+
+  .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+  
