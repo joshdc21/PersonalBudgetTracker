@@ -33,6 +33,8 @@ const Homepage = () => {
   const [error, setError] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
   const [showPopup, setShowPopup] = useState(false);
   const [expenseToEdit, setExpenseToEdit] = useState(null);
 
@@ -45,7 +47,7 @@ const Homepage = () => {
     const token = localStorage.getItem('token');
 
     try {
-      let queryStr = `year=${selectedYear}&month=${selectedMonth}`;
+      let queryStr = `year=${selectedYear}&month=${selectedMonth}&page=${currentPage}&limit=${itemsPerPage}&sortBy=${sortBy}`;
       if (selectedCategory !== 'All') {
         queryStr += `&category=${selectedCategory}`;
       }
@@ -62,8 +64,9 @@ const Homepage = () => {
         throw new Error(data.message || 'Failed to fetch expenses.');
       }
 
-      setExpenses(data.data);
-      setCurrentPage(1);
+      setExpenses(data.data.expenses);
+      setTotalExpenses(data.data.totalAmount);
+      setTotalItems(data.data.total);
     } catch (err) {
       setError(err.message || 'Error loading data. Make sure backend is running.');
     } finally {
@@ -73,26 +76,10 @@ const Homepage = () => {
 
   useEffect(() => {
     fetchExpenses();
-  }, [selectedMonth, selectedYear, selectedCategory]);
+  }, [selectedMonth, selectedYear, selectedCategory, currentPage, sortBy]);
 
-  const sortedExpenses = [...expenses].sort((a, b) => {
-    if (sortBy === 'amount-asc') {
-      return a.amount - b.amount;
-    } else if (sortBy === 'amount-desc') {
-      return b.amount - a.amount;
-    } else if (sortBy === 'date-asc') {
-      return new Date(a.date) - new Date(b.date);
-    } else {
-      return new Date(b.date) - new Date(a.date);
-    }
-  });
-
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const totalPages = Math.ceil(expenses.length / itemsPerPage);
-
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentExpenses = sortedExpenses.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const currentExpenses = expenses;
 
   const handleNext = () => {
     if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
@@ -191,7 +178,7 @@ const Homepage = () => {
         <div className="filter-container">
           <select
             value={selectedMonth}
-            onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+            onChange={(e) => { setSelectedMonth(parseInt(e.target.value)); setCurrentPage(1); }}
             className="filter-select"
           >
             {months.map(m => (
@@ -201,7 +188,7 @@ const Homepage = () => {
 
           <select
             value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setCurrentPage(1); }}
             className="filter-select"
           >
             {years.map(y => (
@@ -211,7 +198,7 @@ const Homepage = () => {
 
           <select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
+            onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
             className="filter-select"
           >
             <option value="All">All Categories</option>
@@ -223,7 +210,7 @@ const Homepage = () => {
 
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
             className="filter-select"
           >
             <option value="date-desc">Newest First</option>
@@ -259,7 +246,7 @@ const Homepage = () => {
                   currentExpenses.map((expense) => (
                     <tr key={expense._id}>
                       <td>{expense.category}</td>
-                      <td>{new Date(expense.date).toLocaleDateString('en-US')}</td>
+                      <td>{new Date(expense.date).toLocaleDateString('en-US', { timeZone: 'UTC' })}</td>
                       <td className="expense-amount">-Rp. {expense.amount.toLocaleString('id-ID')}</td>
                       <td>{expense.description}</td>
                       <td>

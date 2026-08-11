@@ -1,5 +1,7 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test_jwt_secret_key_12345';
 const app = require('../src/app');
 const User = require('../src/models/User');
 const Expense = require('../src/models/Expense');
@@ -67,6 +69,31 @@ describe('Auth Endpoints', () => {
     expect(res.statusCode).toEqual(401);
     expect(res.body.success).toBe(false);
   });
+
+  it('should reject signup with NoSQL injection object in email', async () => {
+    const res = await request(app)
+      .post('/api/users/signup')
+      .send({
+        name: 'Attacker',
+        email: { $gt: '' },
+        password: 'password123',
+      });
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toContain('Email must be a string');
+  });
+
+  it('should reject login with NoSQL injection object in email', async () => {
+    const res = await request(app)
+      .post('/api/users/login')
+      .send({
+        email: { $gt: '' },
+        password: 'password123',
+      });
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toContain('Email must be a string');
+  });
 });
 
 describe('Expenses Endpoints', () => {
@@ -126,8 +153,8 @@ describe('Expenses Endpoints', () => {
 
     expect(res.statusCode).toEqual(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.length).toBeGreaterThan(0);
-    expect(res.body.data[0]._id).toEqual(expenseId);
+    expect(res.body.data.expenses.length).toBeGreaterThan(0);
+    expect(res.body.data.expenses[0]._id).toEqual(expenseId);
   });
 
   it('should update an expense successfully', async () => {
@@ -152,6 +179,30 @@ describe('Expenses Endpoints', () => {
 
     expect(res.statusCode).toEqual(200);
     expect(res.body.success).toBe(true);
+  });
+
+  it('should reject get expenses with NoSQL injection object in category query', async () => {
+    const res = await request(app)
+      .get('/api/expenses?category[$ne]=Food')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toContain('Category must be a string');
+  });
+
+  it('should reject create expense with NoSQL injection object in category body', async () => {
+    const res = await request(app)
+      .post('/api/expenses')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        amount: 20,
+        description: 'Attack',
+        category: { $ne: 'Food' },
+        date: '2026-08-10',
+      });
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toContain('Category must be a string');
   });
 });
 
@@ -252,3 +303,179 @@ describe('Analytics Endpoints', () => {
     expect(transCat.percentage).toEqual(15.38);
   });
 });
+
+describe('Timezone Date Handling', () => {
+  const originalTz = process.env.TZ;
+
+  afterEach(() => {
+    process.env.TZ = originalTz;
+  });
+
+  const testDate = '2026-08-11';
+
+  it('should preserve the correct calendar date when parsed in UTC+2 (Europe/Paris)', async () => {
+    process.env.TZ = 'Europe/Paris'; // UTC+2 (Central European Summer Time)
+
+    // Create an expense
+    const res = await request(app)
+      .post('/api/expenses')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        amount: 30,
+        description: 'Dinner in Paris',
+        category: 'Food',
+        date: testDate,
+      });
+
+    expect(res.statusCode).toEqual(201);
+    expect(res.body.success).toBe(true);
+
+    // Verify the date stored in the DB is UTC midnight (2026-08-11T00:00:00.000Z)
+    const savedDateStr = res.body.data.date;
+    expect(savedDateStr).toEqual('2026-08-11T00:00:00.000Z');
+
+    // Verify formatting behaves correctly under Europe/Paris timezone (using UTC option)
+    const formatted = new Date(savedDateStr).toLocaleDateString('en-US', { timeZone: 'UTC' });
+    expect(formatted).toEqual('8/11/2026');
+  });
+
+  it('should preserve the correct calendar date when parsed in UTC-5 (America/New_York)', async () => {
+    process.env.TZ = 'America/New_York'; // UTC-4 (Eastern Daylight Time) or UTC-5
+
+    // Create an expense
+    const res = await request(app)
+      .post('/api/expenses')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        amount: 40,
+        description: 'Coffee in New York',
+        category: 'Food',
+        date: testDate,
+      });
+
+    expect(res.statusCode).toEqual(201);
+    expect(res.body.success).toBe(true);
+
+    // Verify the date stored in the DB is UTC midnight
+    const savedDateStr = res.body.data.date;
+    expect(savedDateStr).toEqual('2026-08-11T00:00:00.000Z');
+
+    // Verify formatting behaves correctly under America/New_York timezone (using UTC option)
+    const formatted = new Date(savedDateStr).toLocaleDateString('en-US', { timeZone: 'UTC' });
+    expect(formatted).toEqual('8/11/2026');
+  });
+});
+
+describe('Password Reset Flow', () => {
+  let resetToken;
+
+  it('should generate a password reset link and return token in test mode', async () => {
+    const res = await request(app)
+      .post('/api/users/forgot-password')
+      .send({
+        email: 'test@example.com',
+      });
+
+    expect(res.statusCode).toEqual(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body).toHaveProperty('token');
+    resetToken = res.body.token;
+  });
+
+  it('should fail to reset password with an invalid token', async () => {
+    const res = await request(app)
+      .post('/api/users/reset-password')
+      .send({
+        token: 'fake_invalid_token_123',
+        password: 'newpassword123',
+      });
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toContain('Invalid or expired password reset token');
+  });
+
+  it('should fail to reset password if the token has expired', async () => {
+    // Manually expire the token in the DB
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    await User.updateOne(
+      { email: 'test@example.com' },
+      { resetPasswordExpires: new Date(Date.now() - 3600000) } // 1 hour ago
+    );
+
+    const res = await request(app)
+      .post('/api/users/reset-password')
+      .send({
+        token: resetToken,
+        password: 'newpassword123',
+      });
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toContain('Invalid or expired password reset token');
+  });
+
+  it('should successfully reset password with a valid token', async () => {
+    // Re-generate a fresh token for this test
+    const forgotRes = await request(app)
+      .post('/api/users/forgot-password')
+      .send({
+        email: 'test@example.com',
+      });
+    const freshToken = forgotRes.body.token;
+
+    const res = await request(app)
+      .post('/api/users/reset-password')
+      .send({
+        token: freshToken,
+        password: 'newpassword123',
+      });
+
+    expect(res.statusCode).toEqual(200);
+    expect(res.body.success).toBe(true);
+
+    // Verify login works with the new password
+    const loginRes = await request(app)
+      .post('/api/users/login')
+      .send({
+        email: 'test@example.com',
+        password: 'newpassword123',
+      });
+    expect(loginRes.statusCode).toEqual(200);
+    expect(loginRes.body.success).toBe(true);
+    token = loginRes.body.data.token; // Update token for subsequent tests
+  });
+
+  it('should fail to reuse a reset token that was already used', async () => {
+    // Generate a token
+    const forgotRes = await request(app)
+      .post('/api/users/forgot-password')
+      .send({
+        email: 'test@example.com',
+      });
+    const reuseToken = forgotRes.body.token;
+
+    // Use it once
+    const firstReset = await request(app)
+      .post('/api/users/reset-password')
+      .send({
+        token: reuseToken,
+        password: 'finalpassword123',
+      });
+    expect(firstReset.statusCode).toEqual(200);
+
+    // Try to reuse it
+    const secondReset = await request(app)
+      .post('/api/users/reset-password')
+      .send({
+        token: reuseToken,
+        password: 'anotherpassword123',
+      });
+
+    expect(secondReset.statusCode).toEqual(400);
+    expect(secondReset.body.success).toBe(false);
+    expect(secondReset.body.message).toContain('Invalid or expired password reset token');
+  });
+});
+
+

@@ -13,7 +13,11 @@ const AddExpensePopup = ({ onClose, onSaveExpense, expenseToEdit }) => {
     if (expenseToEdit && expenseToEdit.date) {
       return new Date(expenseToEdit.date).toISOString().split('T')[0];
     }
-    return new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
   const [date, setDate] = useState(getInitialDate());
 
@@ -26,7 +30,7 @@ const AddExpensePopup = ({ onClose, onSaveExpense, expenseToEdit }) => {
       category,
       amount: parseInt(amount), // Ensure amount is a number
       description,
-      date: new Date(date), // Use selected date
+      date, // Use selected date string (YYYY-MM-DD)
     };
 
     if (expenseToEdit) {

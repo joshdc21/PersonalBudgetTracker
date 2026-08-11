@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import SignupForm from './pages/SignupForm';
 import LoginForm from './pages/LoginForm';
 import ForgotPass from './pages/ForgotPass';
+import ResetPage from './pages/ResetPage';
 import Homepage from './pages/HomePage';
 import ChartPage from './pages/ChartPage'; 
 import BudgetPage from './pages/BudgetPage';
@@ -22,6 +23,7 @@ function App() {
           <Route path="/signup" element={<SignupForm />} />
           <Route path="/login" element={<LoginForm />} />
           <Route path="/forgot-password" element={<ForgotPass />} />
+          <Route path="/reset-password/:token" element={<ResetPage />} />
           <Route path="/" element={<ProtectedRoute><Homepage /></ProtectedRoute>} />
           <Route path="/chart" element={<ProtectedRoute><ChartPage /></ProtectedRoute>} />
           <Route path="/budget" element={<ProtectedRoute><BudgetPage /></ProtectedRoute>} />
